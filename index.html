@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>ArrowChat</title>
+  <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&display=swap" rel="stylesheet">
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: black;
+      font-family: 'Segoe UI', sans-serif;
+      height: 100%;
+      overflow: hidden;
+    }
+    #particles-js {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+    }
+    .chat-container {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      padding: 10px;
+      box-sizing: border-box;
+    }
+    .header {
+      font-family: 'Dancing Script', cursive;
+      color: #00ffe0;
+      font-size: 32px;
+      margin-bottom: 10px;
+      text-shadow: 0 0 5px #00ffe0;
+      animation: glowPulse 2s ease-in-out infinite;
+    }
+    @keyframes glowPulse {
+      0%, 100% {
+        text-shadow: 0 0 5px #00ffe0, 0 0 10px #00ffe0;
+      }
+      50% {
+        text-shadow: 0 0 15px #00ffe0, 0 0 25px #00ffe0;
+      }
+    }
+    .username-box {
+      margin-bottom: 10px;
+    }
+    .username-box input {
+      padding: 5px;
+      background: #111;
+      color: #00ffe0;
+      border: none;
+      border-radius: 5px;
+      font-size: 14px;
+    }
+    .color-picker {
+      margin-bottom: 10px;
+    }
+    .color-picker select {
+      padding: 5px;
+      background: #111;
+      color: #ff0033;
+      border: none;
+      border-radius: 5px;
+    }
+    .typing-indicator {
+      font-size: 12px;
+      color: #ff0033;
+      margin-bottom: 5px;
+    }
+    .messages {
+      flex: 1;
+      display: flex;
+      flex-direction: column-reverse;
+      overflow-y: auto;
+      padding-right: 10px;
+      color: white;
+    }
+    .input-box {
+      display: flex;
+      align-items: center;
+      margin-top: 10px;
+    }
+    .input-box input {
+      flex: 1;
+      padding: 10px;
+      border-radius: 20px;
+      border: none;
+      background: #111;
+      color: #ff0033;
+      outline: none;
+      font-size: 14px;
+    }
+    .input-box button {
+      background: #ff0033;
+      color: black;
+      border: none;
+      padding: 10px 20px;
+      margin-left: 10px;
+      border-radius: 20px;
+      cursor: pointer;
+    }
+    .message {
+      opacity: 0;
+      animation: fadeInUp 0.4s ease forwards;
+      margin-bottom: 5px;
+    }
+    @keyframes fadeInUp {
+      0% {
+        transform: translateY(10px);
+        opacity: 0;
+      }
+      100% {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="particles-js"></div>
+  <div class="chat-container">
+    <div class="header">ArrowChat</div>
+    <div class="username-box">
+      <label style="color:#00ffe0">Enter your username:</label>
+      <input type="text" id="usernameInput" placeholder="e.g. banana" />
+    </div>
+    <div class="color-picker">
+      <label style="color:#ff0033">Choose your color:</label>
+      <select id="userColor"></select>
+    </div>
+    <div class="typing-indicator" id="typingStatus"></div>
+    <div class="messages" id="messages"></div>
+    <div class="input-box">
+      <input type="text" id="chatInput" placeholder="Type your message..." />
+      <button onclick="sendMessage()">Send</button>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/tsparticles@2.11.1/tsparticles.bundle.min.js"></script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-analytics.js";
+    import { getDatabase, ref, push, onChildAdded, set, onValue } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCHJnsCgQhsJYkhRXHttHqHQVStD4pIzYo",
+      authDomain: "arrowchat-71349.firebaseapp.com",
+      databaseURL: "https://arrowchat-71349-default-rtdb.firebaseio.com",
+      projectId: "arrowchat-71349",
+      storageBucket: "arrowchat-71349.firebasestorage.app",
+      messagingSenderId: "88555526205",
+      appId: "1:88555526205:web:05e291fcea233eaf07b254",
+      measurementId: "G-2GWYTSC2JY"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const analytics = getAnalytics(app);
+    const db = getDatabase(app);
+
+    tsParticles.load("particles-js", {
+      fullScreen: { enable: false },
+      background: { color: { value: "#000" } },
+      particles: {
+        color: { value: "#ff0033" },
+        links: { enable: true, color: "#ff0033" },
+        move: { enable: true, speed: 1 },
+        number: { value: 50 },
+        size: { value: 3 },
+      }
+    });
+
+    const colors = ["Red", "Blue", "Green", "Yellow", "Purple", "Cyan", "Orange", "Pink", "White"];
+    const colorCounts = {};
+    const colorSelect = document.getElementById("userColor");
+
+    colors.forEach(color => {
+      let label = color;
+      if (colorCounts[color]) {
+        colorCounts[color]++;
+        label += ` (${colorCounts[color]})`;
+      } else {
+        colorCounts[color] = 1;
+      }
+      const option = document.createElement("option");
+      option.value = color.toLowerCase();
+      option.textContent = label;
+      colorSelect.appendChild(option);
+    });
+
+    const messages = document.getElementById("messages");
+    const input = document.getElementById("chatInput");
+    const typingStatus = document.getElementById("typingStatus");
+    const usernameInput = document.getElementById("usernameInput");
+
+    function getUsername() {
+      let name = usernameInput.value.trim();
+      if (!name) {
+        const randomNames = ["banana", "echo", "pixel", "nova", "zebra", "orbit", "flame", "cloud", "vortex"];
+        name = randomNames[Math.floor(Math.random() * randomNames.length)];
+        usernameInput.value = name;
+      }
+      return name;
+    }
+
+    input.addEventListener("keypress", (e) => {
+      set(ref(db, "typing"), true);
+      if (e.key === "Enter") sendMessage();
+    });
+
+    input.addEventListener("blur", () => {
+      set(ref(db, "typing"), false);
+    });
+
+    function sendMessage() {
+      const msg = input.value.trim();
+      const color = document.getElementById("userColor").value;
+      const username = getUsername();
+      if (msg) {
+        push(ref(db, "messages"), {
+          text: msg,
+          color: color,
+          username: username,
+          timestamp: Date.now()
+        });
+        input.value = "";
+        set(ref(db, "typing"), false);
+      }
+    }
+
+    onChildAdded(ref(db, "messages"), snapshot => {
+      const data = snapshot.val();
+      const div = document.createElement("div");
+      div.className = "message";
+      div.innerHTML = `<span style="color:${data.color}">${data.username}: ${data.text}</span>`;
+      messages.prepend(div);
+    });
+
+    onValue(ref(db, "typing"), snapshot => {
+      typingStatus.textContent = snapshot.val() ? "This user is typing..." : "";
+    });
+  </script>
+</body>
+</html>
