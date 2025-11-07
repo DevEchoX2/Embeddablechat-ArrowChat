@@ -309,6 +309,7 @@ let typingRef = ref(db, "typing/" + getUsername()); // Unique typing indicator p
     onChildAdded(ref(db, "messages"), snapshot => {
       const data = snapshot.val();
       const div = document.createElement("div");
+      if(data.text.includes("igg")||data.text.includes("67")){return}
       div.className = "message";
       div.innerHTML = `<span style="font-weight: bold; color:${data.color};">${data.username}:</span> ${data.text}`;
       messages.prepend(div);
