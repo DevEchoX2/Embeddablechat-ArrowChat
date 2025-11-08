@@ -151,7 +151,6 @@
       <input type="text" id="chatInput" placeholder="Type your message..." />
       <button id="sendButton">Send</button> <!-- Changed to use addEventListener -->
   </div>
-
   <script src="https://cdn.jsdelivr.net/npm/tsparticles@2.11.1/tsparticles.bundle.min.js"></script>
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-app.js";
@@ -309,7 +308,27 @@ getIP();
       option.textContent = color;
       colorSelect.appendChild(option);
     });
-	
+	async function getBannedIPs() {
+        const bannedIpsList = [];
+        const dbRef = ref(db);
+        try {
+            const snapshot = await get(child(dbRef, 'bans'));
+            if (snapshot.exists()) {
+                const allBans = snapshot.val();
+                for (const key in allBans) {
+                    if (allBans[key].ip) {
+                        bannedIpsList.push(allBans[key].ip);
+                    }
+                }
+            }
+            return bannedIpsList;
+        } catch (error) {
+            console.error("Error fetching banned IPs:", error);
+            return []; // Return an empty list if it fails
+        }
+    }
+
+    const bannedIPs = await getBannedIPs(); 
     const messages = document.getElementById("messages");
     const input = document.getElementById("chatInput");
     const typingStatus = document.getElementById("typingStatus");
@@ -317,8 +336,8 @@ getIP();
     const sendButton = document.getElementById("sendButton");
 let room = "";
     async function loadRoom(join = (room.trim()||"general")){
-    messages.innerHTML="";
     const dbRef = ref(db);
+    messages.innerHTML="";
     try {
         const snapshot = await get(child(dbRef, 'messages'));
         if (snapshot.exists()) {
@@ -397,8 +416,12 @@ let room = "";
     input.addEventListener("keypress", (e) => {
       if (e.key === "Enter") sendMessage();
     });
-
     onChildAdded(ref(db, "messages"), snapshot => {
+      if(bannedIPs.includes(ip.trim())){
+      console.log("you are banned by the admins")
+      document.body.innerHTML = "<h1 style='color: red;'>You are banned.</h1>";
+      return ;
+      }
       const data = snapshot.val();
       let curRoom = (room.trim()||"general");
       if(data.room){
@@ -410,7 +433,7 @@ let room = "";
       }
       data.text = filter(data.text);
       data.username = filter(data.username);
-      if(data.username=="<p3"||data.text=="[Redacted]"){
+      if(data.text=="[Redacted]"){
       return
       }
       const div = document.createElement("div");
@@ -418,7 +441,6 @@ let room = "";
       div.innerHTML = `<span style="font-weight: bold; color:${data.color};">${data.username}:</span> ${data.text}`;
       messages.prepend(div);
     });
-
     onValue(ref(db, "typing"), snapshot => {
       const typingUsers = snapshot.val();
       let typingText = '';
