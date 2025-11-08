@@ -123,7 +123,20 @@
 <body>
   <div id="particles-js"></div>
   <div class="chat-container">
-    <div class="header">ArrowChat</div>
+    <div style="margin-bottom: 10px; display: flex; gap: 10px;">
+  <input
+    type="text"
+    id="roomInput"
+    placeholder="e.g. general"
+    style="flex: 1; padding: 5px; background: #111; color: #00ffe0; border: none; border-radius: 5px; font-size: 14px;"
+  />
+  <button
+    onclick="joinRoom()"
+    style="background: #111; color: #00ffe0; border: none; padding: 6px 12px; border-radius: 5px; cursor: pointer; font-size: 14px;"
+  >
+    Join Room
+  </button>
+</div>
     <div class="username-box">
       <label style="color:#00ffe0">Enter your username:</label>
       <input type="text" id="usernameInput" placeholder="e.g. banana" />
@@ -136,14 +149,14 @@
     <div class="messages" id="messages"></div>
     <div class="input-box">
       <input type="text" id="chatInput" placeholder="Type your message..." />
-      <button id="sendButton">Send</button>
-    </div>
+      <button id="sendButton">Send</button> <!-- Changed to use addEventListener -->
   </div>
+
   <script src="https://cdn.jsdelivr.net/npm/tsparticles@2.11.1/tsparticles.bundle.min.js"></script>
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-app.js";
     import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-analytics.js";
-    import { getDatabase, ref, push, onChildAdded, set, onValue } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-database.js";
+    import { getDatabase, ref, push, onChildAdded, set, onValue, get, child } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-database.js";
 
 async function main(){
     class encryption {
@@ -198,6 +211,13 @@ async function main(){
                 throw error;
             }
         }
+static async sha256(message) {
+    const msgUint8 = new TextEncoder().encode(message);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    return hashHex;
+}
         static async decrypt(packetB64) {
             try {
                 const packetString = window.atob(packetB64);
@@ -231,6 +251,18 @@ async function main(){
             }
         }
     }
+    let ip = ""
+    async function getIP() {
+    try {
+        const response = await fetch('https://api.ipify.org?format=json');
+        const data = await response.json();
+        ip = await encryption.sha256(data.ip)
+        console.log(ip)
+    } catch (error) {
+        console.error('Error fetching IP address:', error);
+    }
+}   
+getIP();
     const profanities =  await encryption.decrypt("eyJqd2siOnsiYWxnIjoiQTI1NkdDTSIsImV4dCI6dHJ1ZSwiayI6Ii1aYzM0NkZTRmhHcmlnbGtnRS1ieUR5MWpybDN2VVoyb0ZNSk1OLWI1QmsiLCJrZXlfb3BzIjpbImVuY3J5cHQiLCJkZWNyeXB0Il0sImt0eSI6Im9jdCJ9LCJpdiI6Ino4aDZVZkRUTjVNbUJtMG4iLCJkYXRhIjoidkY1WCtTanJuTVMvWEU1NHVzSE92MlUvVUtEOElsQnh2dmNxT0ZaMitWbDRZRXZwS1BVOExZRVJzV2NvVXhkT2VQelJETVBUTmRiMnU4ZTRkQk5FdTNCRUY0VDNDbi9jbEk4YzcyMUdZcythNUU5TjV1eGlNM1NwcFQ1N3A2NXNxeXpSc29jU2ZQbmJobjBtRXB6cTZHRCtaRUwwNXhzWnNqWXdrKzNYdGhTNzhwSzF6eGRDdUVxbmh1ZUJRL0hSc2Z3eGlERFExYlV4cTdOa0NnYXJDSi80eVp3WW9jRi9QeWVybElOYmlzUXFLaGNRdWVLbHAyQlRrQnRrTXlndHdCQmVVNlF1Q1pUUzREVlk0UzJINitLZnkxTGxaQUhJR1NHQno4ajhZWXREeWY4VnBuejhWTDkwamNNbHh3eVpLUkNIV0krdGRXQ3ZGUXJZNS9aSnFleUlzektNdmNnUUVsemtCZ24xMk53bVZkOVMwdUlvVkZGcFdTeWN6Nm1xdmIza3BKNVZNSDFmdVJtYXFoSzNUcGJITDdWSGFlTmg5QzF6cUJ3YTZUY0lSOGM0V3dJODBrY2plVXdnZVdybHhDUlp4U0lYNklSVUs4dWZrS1BxWEs4cUZxWkRmRlNHUmlYQklqRGRyYkRhUlZ2TnNiRW1hTDFBTTJEVGNqOWUrOUR1L2wrU3JaeGxEYUJzeUZZSGkySE5Oa1JIS0RybnNXVWh1ejVzcHAzZWdFVlpLcGhwSzNGdGMyNjBrQXAxMExGLzAwWnJ4UTZsSDZwQ0tXSWQ1TGZSdkhKNE1UbEE3akQ5aXh6c0IwS0JNeHFIYjZkVW1SK2U3L2VWNFZBbjA5UnRWR0R2UUdySWozenJHRHh3Si9YMm9TUStFVytvZWdlclNqL2JDeGdhRnpFSDFQK3FTMHRZWnRoQzVPUXZIY205L05BZ1pPUWkxVnJEMkg0TUNtQUhRd3dQbU1WRkRpVHhWSlpnalF6eWtHZGNnSUpnTkFiZFpyQlVOa0VDTkNOM3l5RnVjY0VCN25mSEtvWmF3eFZEWDhKZnorcTJSbFV1N2pITjhqQ1BKY2NmMzN2Q2NBOVFpS1pJT1NJQUFYTTFpUVQ0dmNVOTE0U1FHUzZWYWJPWmZCRGZacFBxMWo4V29oaGxHRlM0dzVUZkdUd21PeXRybE5hd0J1Ukh3NXk2akNGSU9XNzIzZElnNE1OVnQ0NFBXS2JIVS9CdzlLbTB1NnJFRG5kSTNXSFV3NjUyWjBEakdzU0IwRktvcnRrZU5JNWFvZlVNRGRnd29senZMNEd2dUdpQjdQMHN5dHdEUkRrc3k3WVl4Z1Z4azZaeGVDUzgzZUIzSHNCeTMydUNPL0EvQzRRUVJKdE5oL3R1YWFsMDY5T0hTNXJxZTF4bGtKM3o0b2lzc2NiRVVUUjdLbnZRdDRub25QaVJkV051R1poOGs0WGw0TTV3bWhMRmNHaEtRcnpVTzFCSEtkeW44V3JrMVB3SnhUb1VKTFhFTU9YREFsUTFHQ1IyVHJmKzNyOGNrZWYrTTVUNDFxN010bU81NUFaQTRNSkNqQVMxUUoweFNOZWJERkE2dUx3K1hvZkFqL2VCNVgyQnhYRS9udFliZE1IZFFjaFVGa3FZcWJEYzZtNDZqeUU1dVV0T0g4bDdhUkhVM2xOTmFBbjNSZnpFc2I3akF1bjh4Q3ZWZWlWVnBxZTdXek9PcCtRM1ZFTEw0UUttMmV1Y2hma2N3RnFteFlGbmpKZFBETWw0WVZhUmsvbUVIaFJPaXdPcmZMTlEwajB6NGhhZVloZ01QaVpkTVcwbm1LbWo2b2VkWit6dFhhTXptbjUrT0hBKzRwZHRwVldnazh1QU5DaEpkejRhQjN6UnBiN0RKMGlCK1h1WXM2NStBU3U2alp5UGp1NktYQTk3Q2NpUHN0MnRMSEdhVzBOclB2WlFtZkxmcVc4UWt2aFZ2aTdudU14UnRXMEhqS1E0dzBrUm1LOWVTdEdUQ0U2TGhoajgxY0hPWFhkcUdRNW1tYnBpT2xyZmpmc244OC9pK21qNWdjQjZzZlFpR1Rkb2g5MVBFRGM2MDRnNG9WZGVxZTQwYlNJUnoxVzFUOGdQTWwrU0hOTlBjTC9ZcUZRODJFSzFGdGFFaG9SbGhzeTZaZlZJVUFYSTdrbWlDU3F1L0ZQcjZYeUowWitSalN1dnBhc0N5MDQyN3ZReWdGQnhPU0laeCtubTdTWnoxOVM0RGRrMTFNeHQycDRXcGt3MFlXSWxXVzZzYlZYWkgrbGVHbkZWK29kdUd1ZHp4Ukl2dzRaZm5ub0JvcW9WNWVxaHc0Mzc1S1UrRmwzb2FVTUtrWlQwcGx2VjRHeTJmTWFUZ3FMYVRYcDFoOGl0Rlk1RlFqRTRJYlpUZDMrak01UnhSZWhkd0FwK3h0RFp1d3Q1eU12Qk9iQzBRV2UvUmJxREtVd01Ca2MxVDVBZERTeUthc1F2eVk2RHBPaHJXOGtCRWF1QVozSzZaLzFpUURQR0NSTHMwcGphZDExa0pJN25MZDRXcFJBbTdFalV0N2dMMTNaVmZZZEczMHZDWW84VUkrN2pPOWQzWVlmZmV4NUthbkFrd01jTmRzc3ZYOTFlU2QyZVNQSkY0YkNmMUdYSUZsTFhRNDRYRm1sWVpzUVQySmpnV0tNZERReXpZbDNsWTBqb0Q0RTBHWUVGNXFQd3FiRDlVQnV5Y2ZtM24wUnNldzZGcFg3eklHNDFIWFE5eWcvMUZ4TmovVVpRN2JyS1VjMy9sSzVVL3d6aDN5d0FjRjBoSXg0N28zaStwSFBxRkwzaUpOR1NCRnJlOWMzK25JT0pjc2tlUDg5U1VhSnRDTlRPeTJtL2dNayszS1dsTTh0V2tCUnBnWUhRZUsxUmVMN1RYbkRRVkRWSU5tVjRZSWNEYitvNW9HNXFCR2dRQUdCWjMzaENFS1F0bFgxRWN4Z0Uzak9tRUpLRTBsSG16dlVicnhCRFcrSTU1VWNLNFg1K0FZajlzRzFCTE5OMWkvMDYrUmxjbXBTMlZRRXhSd2JKOTZtNGF4RG9WOWdkbDgvKzR6aVZwUVgrTGN3aTV6LytYREp4a01MSFNsbkVrcGlKVVBxTjU2dmZCbXpmQlNyS2c0M1pIWWQ4bHc1UHYvKzFzdkFyZ0NCODBQQ0tYWWFLZHowMy91b2VoenRXNVhWbzhwa3R6eHVlZUtTS09DNTZ4N1NUakhuVGtVbmNwTStjTGp4QXBoZUpLNm5BUzRkcHhpUE9kaW5UU25XaG9vTXArb2E4VGE3N3QvK3A2SUFIbGRxalg2YWF6UmNaOWVaS1FTdlBTak0zYkIxTkcweERrSDFJVUdQeWtYY3RWTnNES0RvcTFUM1B6NWZNaytPMitBTGdhSVg2OWdBSVBEYUdyaDZ4eXRwbW92R3VYQUpPN0RSdC9iZjhmbnIrK3kzZmFPVm01NzJSWFE1b2xOcGcvM1ljNUlrMEpacllzUzMrcWU3b3hLQUVYVWk0VjJXNXJTeGhsMzlQV3lyRU1UTnF0UkJCaVJRakpDTEtFRTRiK2VoeDVlR3pIOUw4UHJYTkp2VlVXdXhqWG1LWHQyOEdLVWJ2RzVOZzRldEN0cFgvNTZGWmQ4V2lZZ2xvV1g2ZFFDZjUwZHp1RnYxSkNLcDZ6NThaSkUvUVNrdkRSV0FpZnR1UzhyelNUOWJsMk9lbXFWTVZpY2o5Um5UY25TZ0VQN1I4YnMxZ3J0MGZCbnVJdXJOVW9RZDJjQlBvZGlySW5FcldKeHMxMnB0YkVocWZXL05jTitYcyt3cU5pTDRyY1lyM2M0eWwzWXd4dnh3ZnQrNHhUZGpaTmROMXpKVjlLMDg4WUZQVG1ONVh6ZUY1RE5mVk1CeHVHSDlkNG5HdEZ5bCtEeThndXZWUHVSTkJYbUhWdW9rRHN2Wk1MUkROOTVMSjF2TWxOcDFrcEhnVHlvclA0cmNld1p4cUpvVHJMTnFuSmtCMlBLSWZ3NnNvTlJ3MC96SkZ0bXBQTnhNVEd4a3Y1RWwweE1iUGdCUE5WQzRKU2k0Y3RqNnplaElONXo5WXpPVjJZWXRsSnVqYzlSVUFuYUhWcTFBUmZ5emNxbHBwalRVRmc2L0FDRmN2aDRXQStlVTQ2b25EeVkvQnNxc1RnUUtQekJWZEZraGthb0xPM1JTUHF2NlROK1ZhUk1FMkhWN05sbFlScU5BOTIrVk5nVDJ0WlN5Tjk4a3JETjEyZHkyd1F3VHd2dFhCRUZiS3E5aU9qVSt6Z2xzZHVwNXA2UlYxeDE1NUtQbU5sYWp1Q3RYV21kMk80RTJiQ2laRzVNVFBNemZDaDF5S3JHMlg4VHNZR0djcDNkVmZVZlpnRkQyNm9Jd3J6K1l4MWd1bWVhTjZmNTUxeWNsQXNhTXQ5d09qSFd3Z1BpRGQ5SnJSenZzSG05OHp1NzJnMDVCUyt1ekZUemdtanQxNWNja1BpM0t4dDJ3a0l5WGZDYVFhZHIyTU14b0hyLzFyT1lXa25HNmUvSk1YdTFNdFZtbmF1TDBDSWl0bWRtbW5oS3M0YTR1UGJ5M3V1bmI1TVRTWVArbUJYbFkveEpmRkwvamNkcUQrejBzZXB2Q04zZmdLOFBFVytmamlVN0drSlc0S1djTG5hdk1rY1pRcDJxNUE0SURESm1tRGtmLzJnUVFrT3AzTTRSQVdnbk84N3V6SXV2WEI1STJ3eTJmeWpkM3lscThwUzBpRlVTVmY0MlNzV0lBMWQyZ05tMm5hVEludnZNcmpWRGFaemdJanFyUy9weWNURmIvMUlCNWtsQVlvUTFJZWlTeGUzR1l6WWdWUDREK0pUU0pzVy8xTUtmQjJCVXprTk5qMlRUOE9KVW5vM0RWSy9udXNqS3p2THFLQUsvR2NjeGs1UzV4bzA3VEhZS2svTFM1U3ZwWFkySGJQc1NzcXhZbVRMMW5LWVhkZEIvOGNxcmpZWDRYTDJMRTdxMkRLRGo5dFRTbmFlV0NpRC9FRlN2Y21WZ2l1eDZwTXZkTS9zeUh0NlZYVk9FQVN3bHk4R1pPVlNmNVR3RGNnZ2dXTGVzd0ZBOU9IWnI4RzlnS25hWGhjWGJQczJmU2xTY2F0MlhRMmVqN1hhOXo4OUFpN05xcEo4RGw2SThGc2g2VkVCM2R0ejh0WXRBdnpFcFc4RmdiZmtHNWNGZDRGaVZVcUJxYzFQMG9jYzJ1MElOYWlOTTZKUld3ZUJZdytrZXo3UTE0OTJhU1ltK1N1c3B4eFdSZHFrdHlucnVSWlpLRjZhRFhWZFVuNXEvNTFwVFFodEtpdDRrZWJIYTVkRkZLT0ZZQWd6U2NpN253OFpaVitQS2wzdThzMEhmd0U3ZG5ONDV4Ymtmb3oycWZTeVRGdzNXb3phemp2b3M5SU01SUo1dGhPNHF2bTl2TGVNR3E2QjdwV2Foc1plZXNoUWJuRXVienVvVjNnSncwOEZKbVdaeFU3VEFRbTlMNUNrcVRCMytaay8zRFNqbk8xMWJmN2ZNR0YvWHpSSG1rWUNXaXo0ZlM2SW1IdHNMTmVqY1FJMjVjNDFVYUovVkN3N0VTcnZsWGFVNEhBaFlnd3ZZNTNzWDRjcXFzWWY4Q0l6UHljc01zYkhGVGNXbGZneHBHZCtRTE9aNTVHMkdWOHBoUnY3cVBnNC9xZmNXajg2TmxnV1NpUXgwcFYwL05nbU1YQ0hHU05OSDBiRGVBazZKa0M4NFZZQm1uazVUVFBRdnA5VHBaeVBQRFdGbWJsOEN0dnJoVXhhZkZ2eXZLd1h4ajNFVW9iWU1GdzRsOFY4cnNUTkZQcmdnbHltVWd0UEVpSDB5eVVFSlgrM0FtRm5KbzhIZWMybmhpL2p6dmxxQmVSMGFvejRKUC85YzhrSHdEV1hsR29NUHA2MmsxaWFaRlVQSlNwQ0hmcHdyclpNTTBlaTM4Y3R4dkR4bHEzRHlidEhHdnRRSzN2Y0djbkhob3BkblUwdXhZNVhaaTJNRUxNT1I3WHNvV1ZtcHhqaXJ6ajMwZlJady9BTnZObGM3VXgxTjVYb2xEYmx1OHhqYm1aclZHOEhrcjBBODlQODZFcmF0VVZZWksyMmtxcXloT0hYa2NRelZSaExPdG5ILzlwUVlRdDhnRG11T0lSSmFPQXM1N1BwZlVudHd3UXlJNTFqYkZOVnVRaXc2cU5weDhDTjArRkN1a1NucDV2a0RhNENTRVdXbzcwWngvdnBydzlac2NLQlZGaTFXQ2JNdkJPbVViamdXTzF0NkF3UW01NTVQTGc0bkRtaEJ1UG1EODRPY01yY3M5bGlrQXVjc2pZM3dZM3dKLzFsVmVzZnYrVzBzWlJYVkNvNmh6dGVRN0dqUXJmVHA0WVltcDZWWjZ5MnFDQmoxKzhWTlNCdjh0c0NVQlJKSEJuVGsrR1YyWm5zMjVvUEYxamxNQ1dKcDZYajI4ZjErV3dkU2doOERxcHlReE1ab1dZM0FaRk5QTXU2ZlVkQ29FcFJFSjV5SVUzTHFFVG1JdWlDeTczQzBUS0tmRFhZdkg0aXRrVkEvV0JOKzJSME9WSi9BQmNoWFpzcmZvUU1tSngwblBIcGRQTFZiN3M4eVhycWQyQy9leWpnTmgxQllvUGlidXVDYWpWQ1JKaFZpUUtwMjNseWwvVW1wS3crYUw5cE5NWVd1eHE2RnhnTTVyNTY5SHd5TDJRR1Buc0k1NllMUXJwNWJOUTdVS1NyQlIrNFVBeHE5Q3hZSnlJVHEySm96L2Y4bTJzWVU3bnUwN29uUE0xNUN5V2NxbUk1V3hrbm1JRnBxZlN1Mk1veHJuS0xyakNwNW9GZU1uVHR2WnRWUkYvRnU1MzRpOG1ja3MxTzRaQkE4MHF5V0RmWEdhdXMrWU40ell1bHNaZHJwSlRPaWpuM2pBV0RjL2s0M2dTM3FRQmZrMGZ4Q2c1NnhYRVVqVE41MHpPd2xhQzJGa1hrS2tiTDFsTis2V3JRNDZmWDhzbnJYK2lGcVJraFpIMGlqQWN0N0dNSVV1aDRlSDFMKzRINVdURDQ2UFNNakVSSTdCWEZlaW85dGJPeE1qVmJiWDJrZ1l1czYvcDl1WWJrb3R1aWxraytZVUhUYkoyTzJuY1NKSFN5N1YvRFgvRDB4OHNwQ2dOYnYxSi80aC9uUWJsVkp6Vkl4RFdFeXpFaWJ4NU5NWXo0bEhtZnhlYmRlQUREU3F5cWNLUnlRUldhaTZ5OEtWWFNkcFRZL0Jsd2UrcXBHVFhwQW1qdXNieWdNdjR5cHF3cnFYeitWQjc2bklRSndFOWVmNzlzc0JaWW9iSVhFU0pNdlkzTGNnb0JhV3d2bmtRLzFiY0hWN09vWkYxY0RoTTJpcWdneTcwK3h2V2YzWHNoOEJpU3lqWVE2REg1dXRHc1pPOG1QSDZwTlVUUHRLSHJSazByVFZuV2hHdGxRamY1SWl4ZzN4L3pFNFpIT0ZNR0U0TDErMXJac1hzZElrOHIrT2pYVmZFMDFkYlBIUWY4K2F6MjhQdVoxL3E5cE85cTk4WWZFeGlhaitTUytWdDNXM0lGblBZZDBHUnNxeVFtaXdFVmRoYjYzWXd5bldGTE5WcmNvaHRXQ2JXejRMTXkzT3FYcXV2Z2tuL2FpVUZsbVhNUnlpQ1lHTVpHM3A4alJ3Rm85VEU4WjQyMVBKem1ld0o2LzlMeWlzeGZNMTduUjJEclNUUUhkaUtDS3FqYWRLK0FEZDcwMlRvM3doZ2JGYzh2Nk9pVjRLYTRERmNDTmhjYXJub1pqSndvdGtRdWdYVGxTRjFWZlovdXhZMmF3ZjJ1SzI5QXVDU3NkVHRXd1c1K1RnaTNjT1FYRU9UbS8yWFdadjVDNDdXVDNkOU9PcUx6Tzl6WEJKZ0VRbzZXL0JCMGozN2hOb1BRNFRybDY2UDhRRWRoOTNxdmlQMCJ9");
     const firebaseConfig = await encryption.decrypt("eyJqd2siOnsiYWxnIjoiQTI1NkdDTSIsImV4dCI6dHJ1ZSwiayI6IlNuSnAxcmZyRnpoNldoV3NWY3BabE1Gb2RMa2NJQkF1RFpKT3hCWmFYOEEiLCJrZXlfb3BzIjpbImVuY3J5cHQiLCJkZWNyeXB0Il0sImt0eSI6Im9jdCJ9LCJpdiI6IlZoUjY2NVhvVlNKTWRGN1oiLCJkYXRhIjoicGpPd2xtcXNtaHRPTFkvZldPbjFRTHNJV2FmOG1sRFZxNjhxWE8yVFBKWkpTQVg1Q2dQRzduam4yVmxmVlRha056TU9XQUl2S0NXQkgxcXkxUDhjaWpGRkM1WXNjRGdEaEZrNjBWZTEyL1JSNy9GMXlRQW45bVlrWmdmbkxzYVJFampYT2FGbUp1WENIS3JaVVZTc3FubDhxK0tyR2JtdEFHUCtEYlRrTnhPbDU0bFRwdG85Wm9HL3UwalpqL3NWdnIzb1I5dG43bjlSQTMrMUZXTEpKSGt3aFhiL1hLdmlsTzVEL0d0dnU4aFVRZzBWRlVVZEpOdHQ3SFUreHZ3NUh2R3RlcmdUV1NOUGNvUlhNU2JxWXlZZFlQWVBDL0dyUHNrRDIyd2dJaWdpS3B3ZS82SEVzdkIrVzg5SldaM1kySkxrVEJPdVhxak9IUDVrZ2t6QkQvVHU4UVV6RmJGRklzSExEQTg4QXRnWE9JZHpwNGJJVHhYZm1EdmVMdnFVbnpjdmZLTysrUDgxREpBTFhtUjE5YUxlbDRSdlN6YjNJRk1YUmRCSGF1MSt3QkdTME8vWTVSM0VxL2pJZExaZ1Z2Q0FQWW1xcjh6ZEl1SEtCdG1rUXdvMXZCK0F2QlZwVFZTSVZpMk9EZVBOdkJ6M3ZtaFJ6eTROenNJd0xFYz0ifQ==");
 
@@ -271,20 +303,60 @@ async function main(){
     }
     const colors = ["Red", "Blue", "Green", "Yellow", "Purple", "Cyan", "Orange", "Pink", "White"];
     const colorSelect = document.getElementById("userColor");
-
     colors.forEach(color => {
       const option = document.createElement("option");
       option.value = color.toLowerCase();
       option.textContent = color;
       colorSelect.appendChild(option);
     });
-
+	
     const messages = document.getElementById("messages");
     const input = document.getElementById("chatInput");
     const typingStatus = document.getElementById("typingStatus");
     const usernameInput = document.getElementById("usernameInput");
     const sendButton = document.getElementById("sendButton");
+let room = "";
+    async function loadRoom(join = (room.trim()||"general")){
+    messages.innerHTML="";
+    const dbRef = ref(db);
+    try {
+        const snapshot = await get(child(dbRef, 'messages'));
+        if (snapshot.exists()) {
+            const allMessages = snapshot.val();
+            const sortedMessages = Object.values(allMessages)
+                                      .sort((a, b) => a.timestamp - b.timestamp);
+            sortedMessages.forEach(data => {
+                data.text = filter(data.text);
+                data.username = filter(data.username);
+                if(data.username=="<p3"||data.text=="[Redacted]"){
+      return
+      }
+      if(data.room){
+      	if(data.room!=join){
+        return ;
+        }
+      }else if(join!="general"){
+      return ;
+      }
+                const div = document.createElement("div");
+                div.className = "message";
+                div.innerHTML = `<span style="font-weight: bold; color:${data.color};">${data.username}:</span> ${data.text}`;
+                messages.prepend(div);
+            });
 
+        } else {
+            console.log("No messages found");
+        }
+    } catch (error) {
+        console.error("Error getting messages:", error);
+    }
+    }
+    function joinRoom(){
+    room = document.getElementById("roomInput").value.trim();
+    console.log(room)
+    loadRoom();
+    }
+   window.joinRoom=joinRoom;
     function getUsername() {
       let name = usernameInput.value.trim();
       if (!name) {
@@ -303,7 +375,6 @@ async function main(){
     input.addEventListener("blur", () => {
       set(typingRef, false);
     });
-    
     function sendMessage() {
       const msg = input.value.trim();
       const color = document.getElementById("userColor").value;
@@ -313,7 +384,9 @@ async function main(){
           text: msg,
           color: color,
           username: username,
-          timestamp: Date.now()
+          timestamp: Date.now(),
+          room: (room.trim()||"general"),
+          addr:ip
         });
         input.value = "";
         set(typingRef, false);
@@ -327,6 +400,14 @@ async function main(){
 
     onChildAdded(ref(db, "messages"), snapshot => {
       const data = snapshot.val();
+      let curRoom = (room.trim()||"general");
+      if(data.room){
+      	if(data.room!=curRoom){
+        return ;
+        }
+      }else if(curRoom!="general"){
+      return ;
+      }
       data.text = filter(data.text);
       data.username = filter(data.username);
       if(data.username=="<p3"||data.text=="[Redacted]"){
