@@ -1564,7 +1564,7 @@
                     });
                 }
                 showReactionPicker(messageId, contentDiv) {
-                    const emojis = ["👍", "😂", "🎉", "👀", "❤️", "🔥","💀"];
+                    const emojis = ["👍", "😂", "🎉", "👀", "❤️", "🔥"];
                     const picker = document.createElement("div");
                     
                     picker.style.cssText = `
@@ -2137,10 +2137,10 @@
                         const container = this.elements.messagesContainer;
                         container.scrollTop = container.scrollHeight;
                     });
-                    
-                    this.socket.on('newMessage', (data) => {
+                    this.socket.on('newMessage', (data,{online}) => {
                         if (data.room === this.currentRoom) {
                             const messageDiv = this.renderMessage(data);
+                            document.getElementById('onlineCount').textContent = `${online} online`;
                             this.elements.messagesContainer.appendChild(messageDiv);
                             const container = this.elements.messagesContainer;
                             container.scrollTop = container.scrollHeight;
