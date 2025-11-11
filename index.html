@@ -1468,6 +1468,8 @@
                     this.isLoading = false;
                     this.isAuthenticated = false;
                     this.typingTimeout = null;
+                    this.cur = 0;
+                    setInterval(()=>{this.cur=0},60000)
                     this.elements = {
                         appContainer: document.querySelector('.app-container'),
                         messagesContainer: document.getElementById("messagesContainer"),
@@ -1517,6 +1519,7 @@
                     }
                 }
                 sendMessageWithImage(imageData) {
+                    if (this.cur >= 30) return;
                     
                     const msg = this.elements.chatInput.value.trim();
                     const color = this.userColor;
@@ -1533,6 +1536,7 @@
                     this.elements.chatInput.value = "";
                     this.elements.chatInput.style.height = "auto";
                     this.socket.emit('typing', { isTyping: false });
+                    this.cur++;
                 }
                 renderReactions(reactions, messageId) {
                     const reactionsDiv = document.createElement("div");
@@ -1987,6 +1991,7 @@
                     const buttons = `
                         <div class="modal-buttons">
                             <button class="btn-secondary" id="modalCancel">Cancel</button>
+                            <button class="btn-primary" id="logout">logout</button>
                             <button class="btn-primary" id="modalConfirm">Save</button>
                         </div>`;
 
@@ -1997,7 +2002,16 @@
                     
                     colorSelect.addEventListener("change", () => colorPreview.style.backgroundColor = colorSelect.value);
                     document.getElementById('modalCancel').addEventListener('click', () => this.elements.modalContainer.innerHTML = "");
-                    document.getElementById('modalConfirm').addEventListener('click', () => {
+       document.getElementById('logout').addEventListener('click', () => {
+    localStorage.removeItem('info');
+    this.isAuthenticated = false;
+    this.elements.appContainer.style.opacity = '0';
+    this.elements.messagesContainer.innerHTML = '';
+    this.elements.roomsList.innerHTML = '';
+    setTimeout(() => {
+        this.showLoginModal();
+    }, 400);
+});   document.getElementById('modalConfirm').addEventListener('click', () => {
                         this.saveUserColor(colorSelect.value);
                         this.elements.modalContainer.innerHTML = "";
                     });
@@ -2034,6 +2048,7 @@
                 }
                 
                 sendMessage() {
+                    if(this.cur>=30) return;
                     const msg = this.elements.chatInput.value.trim();
                     if (msg) {
                         this.socket.emit('sendMessage', {
@@ -2045,6 +2060,7 @@
                         this.elements.chatInput.value = "";
                         this.elements.chatInput.style.height = "auto";
                         this.socket.emit('typing', { isTyping: false });
+                        this.cur++;
                     }
                 }
                 
