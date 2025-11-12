@@ -2067,7 +2067,7 @@
 
                 setupEventListeners() {
                     this.elements.chatInput.addEventListener("input", (e) => {
-                        document.getElementById('charCounter').innerHTML = this.elements.chatInput.value.trim().length +" / 200";
+                      document.getElementById('charCounter').innerHTML = this.elements.chatInput.value.trim().length +" / 200";
                         e.target.style.height = "auto";
                         e.target.style.height = `${Math.min(e.target.scrollHeight, 120)}px`;
                         
@@ -2125,7 +2125,9 @@
                             }
                         }
                     });
-
+                    this.socket.on('online',({ online }) => {
+                            document.getElementById('onlineCount').textContent = `${online} online`;
+                    })
                     this.socket.on('loaded', ({ list }) => {
                         this.isLoading = false;
                         this.hideSkeleton();
@@ -2145,10 +2147,9 @@
                         const container = this.elements.messagesContainer;
                         container.scrollTop = container.scrollHeight;
                     });
-                    this.socket.on('newMessage', (data,{online}) => {
+                    this.socket.on('newMessage', (data) => {
                         if (data.room === this.currentRoom) {
                             const messageDiv = this.renderMessage(data);
-                            document.getElementById('onlineCount').textContent = `${online} online`;
                             this.elements.messagesContainer.appendChild(messageDiv);
                             const container = this.elements.messagesContainer;
                             container.scrollTop = container.scrollHeight;
