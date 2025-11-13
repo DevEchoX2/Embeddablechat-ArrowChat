@@ -2429,6 +2429,7 @@
             if (e.key === 'Enter' && !e.shiftKey) {
               e.preventDefault();
               this.sendMessage();
+              document.getElementById('charCounter').innerHTML ='0 / 200';
             }
           });
 
