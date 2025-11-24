@@ -2789,40 +2789,42 @@
         }
 
         handleAuth(action) {
-          const info = JSON.parse(localStorage.getItem("info"));
-          let username = document.getElementById("usernameInput").value.trim();
-          let password = document.getElementById("passwordInput").value.trim();
-          const errorDiv = document.getElementById("authError");
+          const info = JSON.parse(localStorage.getItem('info'));
+          let username = document.getElementById('usernameInput').value.trim();
+          let password = document.getElementById('passwordInput').value.trim();
+          const errorDiv = document.getElementById('authError');
           if (info) {
             username = info.username;
             password = atob(info.password);
           }
           if (!username || !password) {
-            errorDiv.textContent = "Username and password are required.";
+            errorDiv.textContent = 'Username and password are required.';
             return;
           }
 
-          errorDiv.textContent = "";
+          errorDiv.textContent = '';
 
           this.socket.emit(action, { username, password }, (response) => {
             if (response.success) {
-              if (action === "login") {
+              if (action === 'login') {
                 this.username = response.user.username;
                 localStorage.setItem(
-                  "info",
-                  JSON.stringify({
-                    username: this.username,
-                    password: btoa(password),
-                  })
+                  'info',
+                  JSON.stringify({ username: this.username, password: btoa(password) })
                 );
                 this.startApp();
               } else {
                 this.showLoginModal();
-                document.getElementById("authError").textContent =
-                  "Registration successful! Please log in.";
+                document.getElementById('authError').textContent =
+                  'Registration successful! Please log in, your username is '+response.username+'.';
               }
             } else {
               errorDiv.textContent = response.message;
+              if(info){
+              localStorage.clear();
+              alert('this window will reload, please re register, something happened to the database :(');
+              window.location.reload();
+              }
             }
           });
         }
