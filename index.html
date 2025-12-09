@@ -10,10 +10,25 @@
       href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&display=swap"
       rel="stylesheet"
     />
-  <div id="frame" style="width: 100%;margin: auto;position: relative; z-index: 99998;">
-          <iframe data-aa='2419605' src='//acceptable.a-ads.com/2419605/?size=Adaptive&background_color=ffffff&title_color=ff0000&title_hover_color=000aad&text_color=003ef0&link_color=13f300&link_hover_color=797b25'
-                            style='border:0; padding:0; width:70%; height:auto; overflow:hidden;display: block;margin: auto'></iframe>
+    <div style="position: absolute; z-index: 99999">
+      <input autocomplete="off" type="checkbox" id="aadsstickymit1zi8l" hidden />
+      <div style="padding-top: 0; padding-bottom: 0;">
+        <div style="width:120px;height:60px;position:fixed;text-align:center;font-size:0;top:50%;transform:translateY(-50%);right:0">
+          <label for="aadsstickymit1zi8l" style="top: -24px; left: 0;; position: absolute;border-radius: 4px; background: rgba(248, 248, 249, 0.70); padding: 4px;z-index: 99999;cursor:pointer">
+            <svg fill="#000000" height="16px" width="16px" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 490 490">
+              <polygon points="456.851,0 245,212.564 33.149,0 0.708,32.337 212.669,245.004 0.708,457.678 33.149,490 245,277.443 456.851,490 489.292,457.678 277.331,245.004 489.292,32.337 "/>
+            </svg>
+          </label>
+          <div id="frame" style="width: 120px;margin: auto;z-index: 99998;height: auto display: flex;flex-direction: column; justify-content: center">
+                        <iframe data-aa=2419605 src=//ad.a-ads.com/2419605/?size=120x60 style='border:0; padding:0; width:120px; height:60px; overflow:hidden; margin: 0 auto'></iframe>
+                    </div>
         </div>
+        <style>
+      #aadsstickymit1zi8l:checked + div {
+        display: none;
+      }
+    </style>
+    </div></div>
     <style>
       :root {
         --radius: 0.875rem;
@@ -1979,6 +1994,23 @@
           </div>
           <div id="roomsList"></div>
         </div>
+        <div class="rooms-section">
+          <div class="rooms-header">
+            <h3>Direct Messages</h3>
+            <button class="add-room-btn" id="addDMBtn" title="New DM">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+            </button>
+          </div>
+          <div id="dmsList"></div>
+        </div>
       </aside>
 
       <main class="main-content">
@@ -2100,6 +2132,7 @@
           this.ip = "";
           this.currentRoom = "general";
           this.userRooms = this.loadUserRooms();
+          this.userDMs = this.loadUserDMs();
           this.username = "";
           this.userColor = this.loadUserColor();
           this.isLoading = false;
@@ -2114,6 +2147,8 @@
             currentRoomName: document.getElementById("currentRoomName"),
             roomsList: document.getElementById("roomsList"),
             addRoomBtn: document.getElementById("addRoomBtn"),
+            dmsList: document.getElementById("dmsList"),
+            addDMBtn: document.getElementById("addDMBtn"),
             modalContainer: document.getElementById("modalContainer"),
             settingsBtn: document.getElementById("settingsBtn"),
             userName: document.getElementById("userName"),
@@ -2357,70 +2392,51 @@
           );
         }
         showReactionPicker(messageId, contentDiv) {
-          const emojis = ['👍', '😂', '🎉', '👀', '❤️', '🔥', '💀'];
-          const picker = document.createElement('div');
+          const overlay = document.createElement("div");
+          overlay.className = "emoji-picker-overlay";
 
-          picker.style.cssText = `
-                        position: absolute;
-                        background: var(--card);
-                        border: 1px solid var(--border);
-                        border-radius: var(--radius);
-                        padding: 8px;
-                        display: flex;
-                        gap: 8px;
-                        box-shadow: 0 4px 12px oklch(0 0 0 / 15%);
-                        z-index: 1001;
-                    `;
+          const pickerContainer = document.createElement("div");
+          pickerContainer.className = "emoji-picker-container";
 
-          emojis.forEach((emoji) => {
-            const btn = document.createElement('button');
-            btn.textContent = emoji;
-            btn.style.cssText =
-              'background: none; border: none; font-size: 20px; cursor: pointer; padding: 4px; border-radius: 4px; transition: transform 0.2s ease;';
-            btn.onmouseover = () => (btn.style.transform = 'scale(1.2)');
-            btn.onmouseout = () => (btn.style.transform = 'scale(1)');
-            btn.onclick = () => {
-              this.toggleReaction(messageId, emoji);
-              picker.remove();
-            };
-            picker.appendChild(btn);
-          });
+          const picker = document.createElement("em-emoji-picker");
+          picker.setAttribute(
+            "data-source",
+            "https://cdn.jsdelivr.net/npm/@emoji-mart/data"
+          );
 
-          document.body.appendChild(picker);
+          pickerContainer.appendChild(picker);
+          document.body.appendChild(overlay);
+          document.body.appendChild(pickerContainer);
 
           const rect = contentDiv.getBoundingClientRect();
-          const pickerRect = picker.getBoundingClientRect();
-          const viewportWidth = window.innerWidth;
           const padding = 10;
 
-          let top = rect.top + window.scrollY - pickerRect.height - 4;
-          let left = rect.right - pickerRect.width;
+          let top = rect.top + window.scrollY - 435;
+          let left = rect.right - 352;
 
           if (left < padding) {
             left = padding;
           }
-          if (left + pickerRect.width > viewportWidth - padding) {
-            left = viewportWidth - pickerRect.width - padding;
+          if (left + 352 > window.innerWidth - padding) {
+            left = window.innerWidth - 352 - padding;
           }
           if (top < window.scrollY + padding) {
             top = rect.bottom + window.scrollY + 4;
           }
 
-          picker.style.top = `${top}px`;
-          picker.style.left = `${left}px`;
+          pickerContainer.style.top = `${top}px`;
+          pickerContainer.style.left = `${left}px`;
 
-          setTimeout(() => {
-            document.addEventListener(
-              'click',
-              function removeHandler(e) {
-                if (!picker.contains(e.target)) {
-                  picker.remove();
-                  document.removeEventListener('click', removeHandler);
-                }
-              },
-              { once: true }
-            );
-          }, 0);
+          picker.addEventListener("emoji-select", (event) => {
+            this.toggleReaction(messageId, event.detail.native);
+            overlay.remove();
+            pickerContainer.remove();
+          });
+
+          overlay.addEventListener("click", () => {
+            overlay.remove();
+            pickerContainer.remove();
+          });
         }
         async handleImageUpload(file) {
           if (!file || !file.type.startsWith("image/")) return;
@@ -2478,6 +2494,7 @@
           this.updateUserDisplay();
           this.setupEventListeners();
           this.renderRooms();
+          this.renderDMs();
           this.loadRoom(this.currentRoom);
         }
 
@@ -2499,6 +2516,23 @@
             return ["general"];
           }
         }
+
+          loadUserDMs() {
+            try {
+              const dms = JSON.parse(localStorage.getItem("arrowchat_dms")) || [];
+              return [...new Set(dms)];
+            } catch {
+              return [];
+            }
+          }
+
+          saveUserDMs() {
+            try {
+              localStorage.setItem("arrowchat_dms", JSON.stringify(this.userDMs));
+            } catch (error) {
+              console.error("Failed to save DMs:", error);
+            }
+          }
 
         saveUserRooms() {
           try {
@@ -2722,6 +2756,90 @@
           });
         }
 
+          createDM(user1, user2) {
+            const escape = (str) => str.replace(/\\/g, '\\').replace(/./g, '\\.');
+            const [a, b] = [user1, user2].sort();
+            const encoded1 = escape(a);
+            const encoded2 = escape(b);
+            return `DM${encoded1}.${encoded2}`;
+          }
+
+          renderDMs() {
+            if (!this.elements.dmsList) return;
+            this.elements.dmsList.innerHTML = "";
+            this.userDMs.forEach((user, index) => {
+              const roomId = this.createDM(this.username || "", user);
+              const dmDiv = document.createElement("div");
+              dmDiv.className = "room-item";
+              if (roomId === this.currentRoom) dmDiv.classList.add("active");
+              dmDiv.dataset.room = roomId;
+              dmDiv.dataset.user = user;
+              dmDiv.style.animationDelay = `${0.1 + index * 0.05}s`;
+              dmDiv.innerHTML = `
+                              <svg class="room-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                              </svg>
+                              <span class="room-name">@${user}</span>`;
+
+              dmDiv.addEventListener("click", () => {
+                const room = dmDiv.dataset.room;
+                if (this.currentRoom === room) return;
+                this.loadDM(user);
+                this.closeSidebar();
+              });
+
+              this.elements.dmsList.appendChild(dmDiv);
+            });
+          }
+
+          loadDM(user) {
+            if (this.isLoading) return;
+            const room = this.createDM(this.username || "", user);
+            this.isLoading = true;
+            this.currentRoom = room;
+            this.elements.currentRoomName.textContent = `@${user}`;
+
+            document.querySelectorAll(".room-item").forEach((r) => r.classList.remove("active"));
+            const activeRoom = document.querySelector(`.room-item[data-room="${room}"]`);
+            if (activeRoom) activeRoom.classList.add("active");
+
+            this.showSkeleton();
+            this.socket.emit("joinDM", { user });
+          }
+
+          showNewDMModal() {
+            const content = `
+                          <div class="user-input-group">
+                              <label for="dmUserInput">Username</label>
+                              <input type="text" id="dmUserInput" placeholder="e.g. alice" autofocus />
+                          </div>`;
+            const buttons = `
+                          <div class="modal-buttons">
+                              <button class="btn-secondary" id="modalCancel">Cancel</button>
+                              <button class="btn-primary" id="modalConfirm">Start DM</button>
+                          </div>`;
+
+            this.showModal("New Direct Message", "Enter the username to start a DM with", content, buttons);
+
+            document.getElementById("modalCancel").addEventListener("click", () => (this.elements.modalContainer.innerHTML = ""));
+            document.getElementById("modalConfirm").addEventListener("click", () => {
+              const input = document.getElementById("dmUserInput");
+              const user = input.value.trim();
+              if (!user) return;
+              if (user === this.username) {
+                this.elements.modalContainer.innerHTML = "";
+                return;
+              }
+              if (!this.userDMs.includes(user)) {
+                this.userDMs.push(user);
+                this.saveUserDMs();
+              }
+              this.renderDMs();
+              this.loadDM(user);
+              this.elements.modalContainer.innerHTML = "";
+            });
+          }
+
         showModal(
           title,
           description,
@@ -2793,42 +2911,40 @@
         }
 
         handleAuth(action) {
-          const info = JSON.parse(localStorage.getItem('info'));
-          let username = document.getElementById('usernameInput').value.trim();
-          let password = document.getElementById('passwordInput').value.trim();
-          const errorDiv = document.getElementById('authError');
+          const info = JSON.parse(localStorage.getItem("info"));
+          let username = document.getElementById("usernameInput").value.trim();
+          let password = document.getElementById("passwordInput").value.trim();
+          const errorDiv = document.getElementById("authError");
           if (info) {
             username = info.username;
             password = atob(info.password);
           }
           if (!username || !password) {
-            errorDiv.textContent = 'Username and password are required.';
+            errorDiv.textContent = "Username and password are required.";
             return;
           }
 
-          errorDiv.textContent = '';
+          errorDiv.textContent = "";
 
           this.socket.emit(action, { username, password }, (response) => {
             if (response.success) {
-              if (action === 'login') {
+              if (action === "login") {
                 this.username = response.user.username;
                 localStorage.setItem(
-                  'info',
-                  JSON.stringify({ username: this.username, password: btoa(password) })
+                  "info",
+                  JSON.stringify({
+                    username: this.username,
+                    password: btoa(password),
+                  })
                 );
                 this.startApp();
               } else {
                 this.showLoginModal();
-                document.getElementById('authError').textContent =
-                  'Registration successful! Please log in, your username is '+response.username+'.';
+                document.getElementById("authError").textContent =
+                  "Registration successful! Please log in.";
               }
             } else {
               errorDiv.textContent = response.message;
-              if(info){
-              localStorage.clear();
-              alert('this window will reload, please re register, something happened to the database :(');
-              window.location.reload();
-              }
             }
           });
         }
@@ -3029,6 +3145,9 @@
           this.elements.addRoomBtn.addEventListener("click", () =>
             this.showJoinRoomModal()
           );
+          if (this.elements.addDMBtn) {
+            this.elements.addDMBtn.addEventListener("click", () => this.showNewDMModal());
+          }
           this.elements.settingsBtn.addEventListener("click", () =>
             this.showSettingsModal()
           );
@@ -3181,4 +3300,4 @@
       new arrowchat();
     </script>
   </body>
-</html> 
+</html>
